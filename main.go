@@ -28,8 +28,9 @@ func main() {
 	flags.BoolVar(&debug, "vv", false, "show debug logs")
 	flags.Usage = func() {
 		w := flags.Output()
-		fmt.Fprintf(w, "Usage %s:\n", "beatporttools")
-		fmt.Fprintf(w, "A tool for working with music files downloaded from Beatport\n")
+		fmt.Fprintln(w, "A tool for working with music files downloaded from Beatport")
+		fmt.Fprintln(w, "Usage:")
+		fmt.Fprintln(w, "\tbeatporttools <command> [arguments]")
 		fmt.Fprintln(w)
 		fmt.Fprintf(w, "Global Flags:\n")
 		flags.PrintDefaults()
@@ -72,12 +73,16 @@ func organize(args []string) error {
 	flags := flag.NewFlagSet("organize", flag.ExitOnError)
 	flags.StringVar(&source, "source", ".", "source directory, where your Beatport downloads are located")
 	flags.StringVar(&dest, "dest", ".", "destination directory, where you want the release folders to be created")
-	flags.BoolVar(&noPrompt, "noprompt", false, "do not prompt for input, accept all prompts")
+	flags.BoolVar(&noPrompt, "y", false, "do not prompt for input, accept all prompts")
 
-	defaultUsage := flag.Usage
-	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "beatporttools is a tool to organize your music downloaded from beatport. Use at your own risk.\n")
-		defaultUsage()
+	flags.Usage = func() {
+		w := flags.Output()
+		fmt.Fprintln(w, "usage:")
+		fmt.Fprintln(w, "\tbeatporttools organize [-source source] [-dest dest] [-y]")
+		fmt.Fprintln(w, "flags:")
+		flags.PrintDefaults()
+		fmt.Fprintln(w, "example:")
+		fmt.Fprintln(w, "\tbeatporttools organize -y -source ~/Downloads/beatport_tracks_2025_03 -dest ~/Downloads/beatport_tracks_2025_03_organized")
 	}
 
 	err := flags.Parse(args)

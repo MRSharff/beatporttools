@@ -3,8 +3,9 @@
 ```shell
 beatporttools -h
 
-Usage beatporttools:
 A tool for working with music files downloaded from Beatport
+Usage:
+        beatporttools <command> [arguments]
 
 Global Flags:
   -v    show info logs
@@ -21,13 +22,16 @@ Commands:
 
 ```shell
 beatporttools organize -h
-Usage of organize:
+usage:
+        beatporttools organize [-source source] [-dest dest] [-y]
+flags:
   -dest string
         destination directory, where you want the release folders to be created (default ".")
-  -noprompt
-        do not prompt for input, accept all prompts
   -source string
         source directory, where your Beatport downloads are located (default ".")
+  -y    do not prompt for input, accept all prompts
+example:
+        beatporttools organize -y -source ~/Downloads/beatport_tracks_2025_03 -dest ~/Downloads/beatport_tracks_2025_03_organized
 ```
 
 
