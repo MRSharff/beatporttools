@@ -25,6 +25,13 @@ func organizeIntoReleaseFolders(source, dest string, noPrompt bool, format strin
 	var moves []move
 	var moveFiles []moveFile
 
+	if strings.HasSuffix(source, ".zip") {
+		if err := unzip(source, dest, noPrompt, format); err != nil {
+			slog.Error("error extracting zip", err.Error())
+		}
+		return
+	}
+
 	dirfs := os.DirFS(source)
 
 	dirs, err := os.ReadDir(source)

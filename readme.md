@@ -75,7 +75,7 @@ Done
 
 
 # TODO
-- [ ] Support zip files (this is what beatport downloads to)
+- [x] Support zip files (this is what beatport downloads to)
 - [ ] Support copying files instead of renaming/moving.
 - [x] Support mp3 files
 - [ ] Support all Beatport file types. (AIFF and WAV do not come with tags :( )
