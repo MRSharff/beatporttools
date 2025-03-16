@@ -15,30 +15,44 @@ import (
 	"github.com/go-flac/go-flac"
 )
 
-// TODO: Support zip files (this is what beatport downloads to)
-
 func main() {
-	slog.SetLogLoggerLevel(slog.LevelWarn)
-
 	var (
-		source string
-		dest   string
+		source   string
+		dest     string
+		noPrompt bool
+
+		// log levels
+		info  bool
+		debug bool
 	)
 
-	info := flag.Bool("v", false, "show info logs")
-	debug := flag.Bool("vv", false, "show debug logs")
+	// it would be cool to set up the -v flag to where I could instead get the amount of 'v's and then map that to the
+	// log level, since that's a common way to handle log level flags, eg: -v, -vv, -vvv, etc. For now, just have info
+	// and debug available as two separate flags.
+	flag.BoolVar(&info, "v", false, "show info logs")
+	flag.BoolVar(&debug, "vv", false, "show debug logs")
 	flag.StringVar(&source, "source", ".", "source directory, where your Beatport downloads are located")
 	flag.StringVar(&dest, "dest", ".", "destination directory, where you want the release folders to be created")
-	flag.Parse()
+	flag.BoolVar(&noPrompt, "noprompt", false, "do not prompt for input, accept all prompts")
 
-	switch {
-	case *info:
-		slog.SetLogLoggerLevel(slog.LevelWarn)
-	case *debug:
-		slog.SetLogLoggerLevel(slog.LevelDebug)
+	defaultUsage := flag.Usage
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "beatporttools is a tool to organize your music downloaded from beatport. Use at your own risk.\n")
+		defaultUsage()
 	}
 
-	organizeIntoReleaseFolders(source, dest)
+	flag.Parse()
+
+	logLevel := slog.LevelWarn
+	if info {
+		logLevel = slog.LevelInfo
+	}
+	if debug {
+		logLevel = slog.LevelDebug
+	}
+	slog.SetLogLoggerLevel(logLevel)
+
+	organizeIntoReleaseFolders(source, dest, noPrompt)
 }
 
 type move struct {
@@ -50,7 +64,7 @@ type moveFile struct {
 	fromDir, toDir string
 }
 
-func organizeIntoReleaseFolders(source, dest string) {
+func organizeIntoReleaseFolders(source, dest string, noPrompt bool) {
 	var moves []move
 	var moveFiles []moveFile
 
@@ -58,7 +72,7 @@ func organizeIntoReleaseFolders(source, dest string) {
 
 	dirs, err := os.ReadDir(source)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	for _, dir := range dirs {
 		slog.Debug("checking file", "dir_name", dir.Name(), "is_dir", dir.IsDir())
@@ -124,10 +138,10 @@ func organizeIntoReleaseFolders(source, dest string) {
 	printMoves(moves)
 	//printMovesFiles(moveFiles)
 
-	for retry := true; retry; {
+	for !noPrompt {
 		switch prompt("move files? y/N") {
 		case "y":
-			retry = false
+			noPrompt = true
 		case "N":
 			fmt.Println("Exiting...")
 			os.Exit(0)
