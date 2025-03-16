@@ -10,12 +10,18 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/dhowden/tag"
 )
 
-func organizeIntoReleaseFolders(source, dest string, noPrompt bool) {
+const (
+	ReleaseYearFormat = "{{release_year}}"
+	ReleaseNameFormat = "{{release_name}}"
+)
+
+func organizeIntoReleaseFolders(source, dest string, noPrompt bool, format string) {
 	var moves []move
 	var moveFiles []moveFile
 
@@ -25,6 +31,8 @@ func organizeIntoReleaseFolders(source, dest string, noPrompt bool) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	formatter := buildFormatter(format)
 
 	newDirs := make(map[string]struct{})
 	for _, dir := range dirs {
@@ -61,9 +69,7 @@ func organizeIntoReleaseFolders(source, dest string, noPrompt bool) {
 
 		f.Close()
 
-		releaseName := md.Album()
-		releaseTime := md.Year()
-		newDir := filepath.Join(dest, fmt.Sprintf("%s (%d)", releaseName, releaseTime))
+		newDir := filepath.Join(dest, formatter(md))
 		newDirs[newDir] = struct{}{}
 
 		oldPath := filepath.Join(source, path)
@@ -168,4 +174,60 @@ func printMovesFiles(moveFiles []moveFile) {
 		sb.WriteString("\n")
 	}
 	fmt.Println(sb.String())
+}
+
+func buildFormatter(format string) func(md tag.Metadata) string {
+	var sb strings.Builder
+	var grabbers []func(md tag.Metadata) any
+
+	formatLen := len(format)
+	for i := 0; i < formatLen; {
+		switch {
+		case strings.HasPrefix(format[i:], ReleaseNameFormat):
+			sb.WriteString("%s")
+			grabbers = append(grabbers, func(md tag.Metadata) any {
+				return md.Album()
+			})
+			i += len(ReleaseNameFormat)
+		case strings.HasPrefix(format[i:], ReleaseYearFormat):
+			sb.WriteString("%d")
+			grabbers = append(grabbers, func(md tag.Metadata) any {
+				return md.Year()
+			})
+			i += len(ReleaseYearFormat)
+		default:
+			sb.WriteRune(rune(format[i:][0]))
+			i++
+		}
+	}
+	format = sb.String()
+	return func(md tag.Metadata) string {
+		var args []any
+		for _, grabber := range grabbers {
+			args = append(args, grabber(md))
+		}
+		return fmt.Sprintf(format, args...)
+	}
+}
+
+// formatDir is an alternate formatting function, it's a bit more straight
+// forward, but it has to run over the whole format string for each tag.
+func formatDir(format string, md tag.Metadata) string {
+	var sb strings.Builder
+
+	formatLen := len(format)
+	for i := 0; i < formatLen; {
+		switch {
+		case strings.HasPrefix(format[i:], ReleaseNameFormat):
+			sb.WriteString(md.Album())
+			i += len(ReleaseNameFormat)
+		case strings.HasPrefix(format[i:], ReleaseYearFormat):
+			sb.WriteString(strconv.Itoa(md.Year()))
+			i += len(ReleaseYearFormat)
+		default:
+			sb.WriteRune(rune(format[i:][0]))
+			i++
+		}
+	}
+	return sb.String()
 }

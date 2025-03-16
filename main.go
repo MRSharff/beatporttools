@@ -75,15 +75,17 @@ func main() {
 
 func organize(args []string) error {
 	var (
-		source   string
-		dest     string
-		noPrompt bool
+		source              string
+		dest                string
+		noPrompt            bool
+		releaseFolderFormat string
 	)
 
 	flags := flag.NewFlagSet("organize", flag.ContinueOnError)
 	flags.StringVar(&source, "source", ".", "source directory, where your Beatport downloads are located")
 	flags.StringVar(&dest, "dest", ".", "destination directory, where you want the release folders to be created")
 	flags.BoolVar(&noPrompt, "y", false, "do not prompt for input, accept all prompts")
+	flags.StringVar(&releaseFolderFormat, "format", "{{release_name}} ({{release_year}})", "release folder format")
 
 	flags.Usage = func() {
 		w := flags.Output()
@@ -91,6 +93,13 @@ func organize(args []string) error {
 		fmt.Fprintln(w, "\tbeatporttools [global flags] organize [-source source] [-dest dest] [-y]")
 		fmt.Fprintln(w, "flags:")
 		flags.PrintDefaults()
+		fmt.Fprintln(w, "format variables:")
+		fmt.Fprintln(w, "\trelease_name")
+		fmt.Fprintln(w, "\trelease_year")
+		fmt.Fprintln(w, "\trelease_date")
+		fmt.Fprintln(w, "\trelease_artists")
+		fmt.Fprintln(w, "example:")
+		fmt.Fprintln(w, "\tbeatporttools organize -y -format=\"{{release_name}}_{{release_year}}\"")
 		fmt.Fprintln(w, "example:")
 		fmt.Fprintln(w, "\tbeatporttools organize -y -source ~/Downloads/beatport_tracks_2025_03 -dest ~/Downloads/beatport_tracks_2025_03_organized")
 	}
@@ -99,7 +108,7 @@ func organize(args []string) error {
 	if err != nil {
 		return fmt.Errorf("error parsing flags for the organize command: %w", err)
 	}
-	organizeIntoReleaseFolders(source, dest, noPrompt)
+	organizeIntoReleaseFolders(source, dest, noPrompt, releaseFolderFormat)
 	// todo: probably return an error from organizeIntoReleaseFolders
 	return nil
 }
