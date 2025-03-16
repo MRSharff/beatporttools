@@ -3,30 +3,31 @@
 ```shell
 beatporttools -h
 
-beatporttools is a tool to organize your music downloaded from beatport. Use at your own risk.
-Usage of beatportools:
+Usage beatporttools:
+A tool for working with music files downloaded from Beatport
+
+Global Flags:
+  -v    show info logs
+  -vv
+        show debug logs
+Commands:
+        organize        Reorganizes music downloaded from beatport
+
+```
+
+# Commands
+
+## Organize
+
+```shell
+beatporttools organize -h
+Usage of organize:
   -dest string
         destination directory, where you want the release folders to be created (default ".")
   -noprompt
         do not prompt for input, accept all prompts
   -source string
         source directory, where your Beatport downloads are located (default ".")
-  -v    show info logs
-  -vv
-        show debug logs
-
-```
-
-```shell
-beatporttools -noprompt
-
-Darwin - I_ll Be There (Extended Mix).flac-------> I'll Be There (2024-01-12)\Darwin - I_ll Be There (Extended Mix).flac
-Darwin - I_ll Be There (Radio Mix).flac----------> I'll Be There (2024-01-12)\Darwin - I_ll Be There (Radio Mix).flac
-Darwin, 3star - Reflections (Original Mix).flac--> I'll Be There (2024-01-12)\Darwin, 3star - Reflections (Original Mix).flac
-
-Moving files...
-Files moved.
-
 ```
 
 
