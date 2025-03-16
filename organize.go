@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"math"
@@ -10,8 +12,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/go-flac/flacvorbis"
-	"github.com/go-flac/go-flac"
+	"github.com/dhowden/tag"
 )
 
 func organizeIntoReleaseFolders(source, dest string, noPrompt bool) {
@@ -24,8 +25,14 @@ func organizeIntoReleaseFolders(source, dest string, noPrompt bool) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	newDirs := make(map[string]struct{})
 	for _, dir := range dirs {
 		slog.Debug("checking file", "dir_name", dir.Name(), "is_dir", dir.IsDir())
+		if dir.IsDir() {
+			slog.Debug("file is a directory, skipping")
+			continue
+		}
 		path := dir.Name()
 		f, err := dirfs.Open(path)
 		if err != nil {
@@ -33,47 +40,31 @@ func organizeIntoReleaseFolders(source, dest string, noPrompt bool) {
 			continue
 		}
 
-		metadata, err := flac.ParseMetadata(f)
-		if err != nil {
-			slog.Warn("Error parsing metadata", "path", path, "error", err)
+		readSeeker, ok := f.(io.ReadSeeker)
+		if !ok {
+			slog.Warn("File does not implement io.ReadSeeker", "path", path)
 			continue
 		}
-		m := map[string]string{}
-		for i, md := range metadata.Meta {
-			if md.Type == flac.VorbisComment {
-				cmt, err := flacvorbis.ParseFromMetaDataBlock(*md)
-				if err != nil {
-					slog.Warn("Error parsing vorbis comment", "path", path, "comment", cmt, "index", i, "error", err)
-					continue
-				}
 
-				for _, tag := range cmt.Comments {
-					parts := strings.SplitN(tag, "=", 2)
-					if len(parts) != 2 {
-						slog.Warn("tag did not have 2 parts", "tag", tag)
-						continue
-					}
-					m[parts[0]] = parts[1]
-				}
-				break
-			}
+		md, err := tag.ReadFrom(readSeeker)
+		if err != nil {
+			slog.Warn("Error reading tag", "path", path, "error", err)
+			continue
 		}
 
-		slog.Debug(dir.Name())
-		for k, v := range m {
-			slog.Debug(fmt.Sprintf("%s: %s\n", k, v))
+		if slog.Default().Enabled(context.Background(), slog.LevelDebug) {
+			slog.Debug(dir.Name())
+			for k, v := range md.Raw() {
+				slog.Debug(fmt.Sprintf("%s: %s\n", k, v))
+			}
 		}
 
 		f.Close()
 
-		releaseName := m["album"]
-		releaseTime := m["release_time"]
-		newDir := filepath.Join(dest, fmt.Sprintf("%s - (%s)", releaseName, releaseTime))
-
-		if err := os.MkdirAll(newDir, os.ModePerm); err != nil {
-			slog.Error("Error creating directory", "dir", newDir, "error", err)
-			continue
-		}
+		releaseName := md.Album()
+		releaseTime := md.Year()
+		newDir := filepath.Join(dest, fmt.Sprintf("%s (%d)", releaseName, releaseTime))
+		newDirs[newDir] = struct{}{}
 
 		oldPath := filepath.Join(source, path)
 		newPath := filepath.Join(newDir, path)
@@ -100,13 +91,23 @@ func organizeIntoReleaseFolders(source, dest string, noPrompt bool) {
 		}
 	}
 
+	fmt.Println("Creating new directories...")
+	for newDir := range newDirs {
+		if err := os.MkdirAll(newDir, os.ModePerm); err != nil {
+			slog.Error("Error creating directory, exiting", "dir", newDir, "error", err)
+			return
+		}
+	}
+
 	fmt.Println("Moving files...")
 	for _, move := range moves {
+		// TODO: do not overwrite files. Ask to overwrite, make a copy, or skip.
+		// 	Allow this to be set as a flag so that this can be run without prompts.
 		if err := os.Rename(move.from, move.to); err != nil {
 			slog.Warn("Error moving file %s: %s", move.from, err)
 		}
 	}
-	fmt.Println("Files moved.")
+	fmt.Println("Done")
 }
 
 type move struct {

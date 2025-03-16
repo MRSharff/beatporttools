@@ -2,7 +2,4 @@ module github.com/MRSharff/beatporttools
 
 go 1.23
 
-require (
-	github.com/go-flac/flacvorbis v0.2.0 // indirect
-	github.com/go-flac/go-flac v1.0.0 // indirect
-)
+require github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
