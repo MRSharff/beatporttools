@@ -30,7 +30,7 @@ func main() {
 		w := flags.Output()
 		fmt.Fprintln(w, "A tool for working with music files downloaded from Beatport")
 		fmt.Fprintln(w, "Usage:")
-		fmt.Fprintln(w, "\tbeatporttools <command> [arguments]")
+		fmt.Fprintln(w, "\tbeatporttools [global flags] <command> [arguments]")
 		fmt.Fprintln(w)
 		fmt.Fprintf(w, "Global Flags:\n")
 		flags.PrintDefaults()
@@ -53,14 +53,24 @@ func main() {
 	}
 	slog.SetLogLoggerLevel(logLevel)
 
-	command, ok := commands[os.Args[1]]
+	commandIndex := 1
+	if info {
+		commandIndex++
+	}
+	if debug {
+		commandIndex++
+	}
+
+	command, ok := commands[os.Args[commandIndex]]
 	if !ok {
 		flags.Usage()
 		os.Exit(1)
 	}
 
-	command(os.Args[2:])
-
+	if err := command(os.Args[commandIndex+1:]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }
 
 func organize(args []string) error {
@@ -70,7 +80,7 @@ func organize(args []string) error {
 		noPrompt bool
 	)
 
-	flags := flag.NewFlagSet("organize", flag.ExitOnError)
+	flags := flag.NewFlagSet("organize", flag.ContinueOnError)
 	flags.StringVar(&source, "source", ".", "source directory, where your Beatport downloads are located")
 	flags.StringVar(&dest, "dest", ".", "destination directory, where you want the release folders to be created")
 	flags.BoolVar(&noPrompt, "y", false, "do not prompt for input, accept all prompts")
@@ -78,7 +88,7 @@ func organize(args []string) error {
 	flags.Usage = func() {
 		w := flags.Output()
 		fmt.Fprintln(w, "usage:")
-		fmt.Fprintln(w, "\tbeatporttools organize [-source source] [-dest dest] [-y]")
+		fmt.Fprintln(w, "\tbeatporttools [global flags] organize [-source source] [-dest dest] [-y]")
 		fmt.Fprintln(w, "flags:")
 		flags.PrintDefaults()
 		fmt.Fprintln(w, "example:")
