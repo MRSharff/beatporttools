@@ -1,24 +1,5 @@
 # Beatport Tools
-
-# Installation
-1. Install the Go programming language for your operating system from https://go.dev/
-2. Confirm installation by opening your preferred terminal (Command Prompt on Windows) and running 
-   ```shell
-   go version
-   ```
-3. Next install Beatport Tools by running
-   ```shell
-   go install github.com/MRSharff/beatporttools
-   ```
-4. Confirm installation by running
-   ```shell
-   beatporttools --help
-   ```
-    or if on Windows
-   ```shell
-   beatporttools.exe --help
-   ```
-
+A tool for working with music files downloaded from Beatport
 
 ```shell
 beatporttools -h
@@ -35,6 +16,25 @@ Commands:
         organize        Reorganizes music downloaded from beatport
 
 ```
+
+# Installation
+1. Install the Go programming language for your operating system from https://go.dev/
+2. Confirm installation by opening your preferred terminal (Command Prompt on Windows) and running
+   ```shell
+   go version
+   ```
+3. Next install Beatport Tools by running
+   ```shell
+   go install github.com/MRSharff/beatporttools
+   ```
+4. Confirm installation by running
+   ```shell
+   beatporttools --help
+   ```
+   or if on Windows
+   ```shell
+   beatporttools.exe --help
+   ```
 
 # Commands
 
